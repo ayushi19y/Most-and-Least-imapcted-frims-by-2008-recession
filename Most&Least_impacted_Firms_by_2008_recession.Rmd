@@ -1,0 +1,98 @@
+---
+title: "Effect of Financial Crisis of Economic Profits"
+author: "Grace Fa, Cristian Franco, Ayushi Yadav"
+date: "9/19/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+```
+
+## Introduction
+The Financial Crisis of 2008 has been considered one of the worst economic disasters since the Great Depression, where its effect is still seen in today’s economy [1]. Unemployment rate at 13.2%, GDP growth rate of -2.5% and mortgage default rates up to 70% were some of the reported metrics to demonstrate its catastrophic consequences. While blame has been pointed towards several factors, deregulation of the financial industry has been commonly cited to be one of the primary reasons [2]. Banks sold mortgages to hedge funds at financial markets and used the collected money to create more mortgages. Hedge funds bundled similar mortgages and sold these securities to investors. The creditworthiness of such bundles were set by insurance companies to account for investor risk. The popularity of the derivative made it sold to both financial institutions and individual investors. Incentives to keep up with demand motivated banks to approve as many mortgages as possible. The introduction of subprime loans and low fed rates also allowed more homeowners
+to be approved for mortgages. However, once supply outweighed demand and later increases were set to the fed rate, homeowners were unable to keep up with monthly payments nor able to sell their homes. Once many mortgages were defaults, the housing markets crashed and in turn led to the financial crisis. While the financial crisis can be examined through several perspectives, this report was focused on corporations. Firms were examined by their average net income percentage before and during the crisis. Rankings were made from those with largest and smallest percent changes. The time it took for firms to recover from the post-crisis was identified from 2009 to 2014. These measurements were used to determine the long term effects of the financial crisis for corporate profits.
+
+## Data
+The dataset used for analysis was the Compustat 1990-2015 Lots database. This database provided financial, statistical, and market information of global companies. A standard set of column variables defined the financial statistics of firms across all its data files. For example, “gvkey” was the global company key which was a unique six-digit number key assigned to each company (issue, currency, index) in the Capital IQ Compustat database. Standardizing the column variables ensured the ease of comparability of data items, as well as financial results from different time frames. The data file provided 20 years worth of information about financial statistics for different firms from 1989-2010 including the Great Financial Crisis period of 2007-08.
+
+## Effect of Finacial Crisis
+
+```{r}
+library(dplyr)
+myfile <- "/Users/ayushiyadav/Desktop/RIT/SEMESTER_5/Financial Analytics/Most&Least_impacted_firms_by_2008_recession/Compustat 1990-2015 Lots.csv"
+mydat <- read.csv(myfile,header = T, sep = ",")
+#1 Percent decrease in the pre-crisis and during crisis
+pc_table <- filter(mydat, 2004==fyear| fyear==2005 | fyear==2006) %>% select(fyear, tic, ni)
+dc_table <- filter(mydat, 2007==fyear | fyear==2008) %>% select(fyear, tic, ni)
+pc_mean_table <- aggregate(ni ~ fyear, data = pc_table, mean)
+dc_mean_table <- aggregate(ni ~ fyear, data = dc_table, mean)
+pc_mean <- mean(pc_mean_table$ni)
+dc_mean <- mean(dc_mean_table$ni)
+mean_change <- paste(format (((pc_mean-dc_mean)/pc_mean)*100, digits = 2,format = 'f'),'%')
+cat("Overall, average annual net income decreased by", mean_change,
+"for firms during crisis year (2007-08)\ncompared to pre-crisis years (2004-06)")
+```
+
+The available data can be manipulated in a number of different ways to arrive at a conclusion for the overall effect of the crisis. For the purpose of simplicity and considering the requirements of this assignment, we derived our results by calculating the percentage decrease in the net income of the firms in the crisis period compared to the pre crisis period.The logical sequence flow of the program was:
+• Load the data into R from the saved location and read the file
+• Extract the data based on the pre crisis and crisis years
+• Compute the summary statistics for net income based on years and calculate the difference between
+pre crisis and crisis period.
+• Format the result
+
+The dplyr package in R made data manipulation easier by constraining and categorizing data based on
+logical criteria. The provision of simple verb functions for common data manipulation tasks translated the logical thought process into code easier for a beginner. The above code implemented the dplyr library the first filter the data from the file using the filter function based on financial year (fyear) for the pre crisis years in pc_table and crisis years in the dc_table. The aggregate function calculated the mean of the net income (ni) of the firms in filtered data categorised by the fyear. The percentage change in the mean was then calculated, formatted and concatenated with strings to give the final result in a sentence. As observed from the results above, the average annual net income decreased by 20% for firms during the crisis year (2007-08) compared to pre-crisis years (2004-06).
+
+## Most and Least Impacted Firms
+The approach to rank firms was based on the change in their net income as compared to the pre-crisis years to determine most and the least impacted firms during the 2008 financial crisis. The rankings can be arrived at on the basis of percentage and absolute change.
+
+```{r}
+#2 Top 10 and bottom 10 firms with absolute and percent changes
+pc_mean_tic <- aggregate(ni~tic, data = pc_table,mean)
+dc_mean_tic <- aggregate(ni~tic, data = dc_table,mean)
+PcDc_mean_tic <- merge(pc_mean_tic,dc_mean_tic,by= 'tic')
+colnames(PcDc_mean_tic) <- c("tic", "pcmean", "dcmean")
+PcDc_mean_change <- mutate(PcDc_mean_tic, PercentChange = ((dcmean-pcmean) / pcmean)*100, AbsoluteChange=abs(dcmean-pcmean))
+order_PercentChange <- PcDc_mean_change[order(PcDc_mean_change$PercentChange, decreasing = TRUE ),]
+is.na(order_PercentChange) <- sapply(order_PercentChange, is.infinite)
+order_PercentChange[is.na(order_PercentChange)] <- NaN
+order_PercentChange <- na.omit(order_PercentChange)
+head_PercentChange <- head(order_PercentChange[c("tic","PercentChange")],10)
+tail_PercentChange <-tail(order_PercentChange[c("tic","PercentChange")],10)
+order_AbsoluteChange <- PcDc_mean_change[order(PcDc_mean_change$AbsoluteChange, decreasing = TRUE ),]
+head_AbsoluteChange <- head(order_AbsoluteChange[c("tic","AbsoluteChange")],10)
+tail_AbsoluteChange <- tail(order_AbsoluteChange[c("tic","AbsoluteChange")],10)
+## [1] "Top and bottom 10 firms with Percent Changes :"
+print(head_PercentChange)
+```
+
+The logical sequence flow of the program was:
+• Compute the mean for net income for each firm based on pre-filtered year wise data
+• Calculate the percentage change and absolute change
+• Print the Top 10 and the bottom 10 results
+The aggregate function was applied to summarize the mean of the net income grouped by ticker. The data was the filtered data (based on fyear) from the previous tables pc_table for pre crisis years and dc_table for crisis years. The mutate function created two new columns named PercentChange and AbsoluteChange tabulating the results of the percentage and absolute change in the mean respectively. The data was ranked in decreasing order. To determine the 10 most and least impacted firms, print statements returned the topmost and bottommost values of specific columns.The two approaches returned different results for the most and least impacted firms. Although very popular, when telling a story with data, percentage change metrics can be misleading, especially when the context is unknown.
+
+## Financial Recovery Period
+
+```{r}
+#3 Highest Net Income and when it was breached in the post-crisis period (2009-14)
+pc_high_ni <- pc_table %>% group_by(tic) %>% filter(ni == max(ni)) %>% ungroup() %>% select(tic, ni)
+post_table <- filter(mydat, 2009<=fyear & fyear<=2014) %>% select(fyear, tic, ni)
+post_highpc_ni <- merge(pc_high_ni,post_table,by = "tic")
+data0 <- mutate(post_highpc_ni, YearsRec = ifelse(post_highpc_ni$ni.y>post_highpc_ni$ni.x, post_highpc_ni$fyear-2008,1000))
+data1 <- data0 %>% group_by(tic) %>% filter(YearsRec == min(YearsRec)) %>% ungroup() %>% select (tic, YearsRec)
+data2 <- data1[!duplicated(data1[,c(1)]),]
+tic_YearsRecover <- mutate(data2, YearsRecover = ifelse(data2$YearsRec<1000, data2$YearsRec,NA)) %>% select(tic,YearsRecover)
+print(head(tic_YearsRecover,20))
+```
+
+Financial recovery was the measured time elapsed between the year of highest Net Income of the firms in the pre crisis period and years when that income level was surpassed in the post crisis period of 2009-14.The logical sequence of the program was:
+• Extract the maximum net income data in the pre-crisis years for each firm from the already filtered
+data
+• Extract the net income data in the post-crisis years for each firm
+• Compare the data using conditional statements
+• Format and tabulate the results
+The code chunk used filtered the same pre crisis data from the first question. The vectorised if else function compared the max net incomes in the pre crisis period for each firm with the net income for the firm in the post crisis years. If the predetermined max net income was surpassed in any of the post crisis years, the condition was TRUE, and the difference in the year was calculated else the condition argument returned FALSE and 100 was printed. The final results were tabulated to print the first 20 firms.
+
+## Conclusion
+Based on our data manipulation procedure, the average net income decreased by 20% for firms during crisis years as compared to the pre-crisis period, thus resulting in reduction in the profits of corporate businesses. Considering that profitability is generally a unique measure of corporate success and an essential indicator of economic performance; thus, this decrease had a serious negative impact on economic performance indicators such as unemployment and GDP. Therefore, if the government does not introduce immediate economic measures to address the financial crisis, the effects may be felt even many years after the crisis.
